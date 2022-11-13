@@ -35,9 +35,9 @@ class Login_form():
     ## Defining the non dynamic controls They will be the same in the app and it won't cahnge dynamically
     def non_dynamic_controls(self):
         self.username_label  = Label(self.loginscreen , text="Enter Username")
-        self.username_textbox = Entry(self.loginscreen , width=40)
+        self.username_textbox = Entry(self.loginscreen , width=40 , text='vinay')
         self.password_label = Label(self.loginscreen , text="Enter Password")
-        self.password_textbox = Entry(self.loginscreen, width=40 , show="*")
+        self.password_textbox = Entry(self.loginscreen, width=40 , show="*" , text='vinay')
         self.remember_me = Checkbutton(self.loginscreen , text="Remember Me")
         self.loginBtn = Button(self.loginscreen  ,text="Login" , width=18,command=self.login_click)
         self.registerbtn = Button(self.loginscreen , text="Register New User", width=33  , command=self.registration_click)

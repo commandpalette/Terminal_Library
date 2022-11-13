@@ -1,15 +1,15 @@
 import sqlite3
+import datetime
+
 
 conn = sqlite3.connect('library_management.db')
 c = conn.cursor()
-
 
 def saving_details():
     conn.commit()
 
 def closing_database():
     conn.close()
-
 
 
 # Database details
@@ -52,3 +52,16 @@ def registration_check(username , password):
         c.execute('INSERT INTO users (username , password) VALUES ( "%s" , "%s");' %(username , password))
         saving_details()
         return True
+    
+def book_lending_database(book_name):
+    name = book_name.split(',')[0]
+    username = book_name.split(',')[1]
+    current_date  = datetime.date.today()
+    c.execute('UPDATE books SET rented_date = "%s" WHERE book_name = "%s";' %(current_date , name))
+    saving_details()
+    c.execute('UPDATE books SET rented_user = "%s" WHERE book_name ="%s";' %(username , name))
+    saving_details()
+    c.execute('SELECT * FROM books WHERE rented_user = "%s";' %(username))
+    list = c.fetchall()
+    return list
+    

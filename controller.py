@@ -44,7 +44,14 @@ def registration_data(registration_data):
     else:
         messagebox.showerror(message_string , "User Already Exists - Choose Different Username and Password")
 
+""" Rent Book Data """
+def rent_book(book_name):
+    returned_data = Models.database.book_lending_database(book_name)
+    # pub.sendMessage("returned_books" , book_details = returned_data)
+    # db.inserting_data_into_table
+    db.inserting_data_after_rent_click(returned_data)
 
+    
 
 ## Calling the required login forms and Dashboard
 # Login form
@@ -62,10 +69,11 @@ def calling_dashboard(username , bookcount , *book_details):
     db.defining_dynamic_controls()
     db.placing_controls()
 
-
+"""Pub Message's for calling diff fuctions"""
 # Pub messages from the Login form
 pub.subscribe(login_data , "login_data")
 pub.subscribe(registration_data , "registration_data")
+pub.subscribe(rent_book , "book_renting")
 
 
 
