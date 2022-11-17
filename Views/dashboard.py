@@ -6,32 +6,19 @@ from tkcalendar import DateEntry
 import tkintertable as tktable
 from tkintertable import Tables
 import datetime
+from datetime  import datetime
 from tkinter import messagebox
 from pubsub import pub
-
-#self.table.insert('', 'end', text="1", values=(book))
-# pub.subscribe(check_book , "book_taking")
-
-
-## Pub subscribe for to call the function and send the details data
-
-# def message_placing(whole_book):
-#         # self.whole_book = whole_book
-#         # self.whole_book = book_data
-#         print(whole_book["class_name"])
-#         print(whole_book["book_details"])
-
-        
+from dateutil import parser
 
 
 class Dashboard():
-    
-    # Parts that are inclded are __init__
+  
     def __init__(self , username , bookcount , *book_details) -> None:
         self.dashboard = Tk()
         self.dashboard.title("Library - Manager")
-        # self.dashboard.geometry('950x600')
-        self.dashboard.geometry('300x300')
+        self.dashboard.geometry('950x600')
+        # self.dashboard.geometry('500x500')
         self.username = username
         self.bookcount = bookcount
         self.raw_details = []
@@ -39,6 +26,8 @@ class Dashboard():
         self.books_to_take = []
         self.whole_book = []
         self.book_details  = book_details
+        self.total_check_amount = 0
+        self.fine_amount = 0
         
 
     def populating_book_list(self):
@@ -50,52 +39,67 @@ class Dashboard():
         self.whole_book_count = len(self.whole_book)
 
     def defining_static_controls(self):
-        # Frames for dashboard
+       
         self.upper_layout  = Frame(self.dashboard )
         self.main_layout = Frame(self.dashboard)
         self.bottom_layout = Frame(self.dashboard)
 
-        # Controls for the dashboard
         self.amount_label  = Label(self.upper_layout , text="Amount Incured || 0 ")
         self.username_label = Label(self.upper_layout , text="Welcome || " + self.username) 
         self.books_label = Label(self.upper_layout , text="Books Taken || " + str(self.bookcount))
 
     
-
-
     def inserting_data_after_rent_click(self, returned_data):
-        self.books['menu'].delete(self.var_choose.get())
-        self.var_choose.set("Available Books")
-        self.bookcount +=1
-        self.books_label.config(text="Books Taken || " + str(self.bookcount))
-        # current_index = self.books['menu'].index(options.get())
-        # print(self.books.grab_current())
-    #     for item in tree.get_children():
-    #   tree.delete(item)
-        for item in self.table.get_children():
-            self.table.delete(item)
-        for lines in returned_data:
-            self.returned_data = lines
-            self.table.insert('' , 'end' , text="1" , values=(self.returned_data[0] , self.returned_data[1] , self.returned_data[2] ,self.returned_data[3]))
+        try:
+            self.books['menu'].delete(self.var_choose.get())
+            self.var_choose.set("Available Books")
+            self.bookcount +=1
+            self.books_label.config(text="Books Taken || " + str(self.bookcount))
+            self.total_check_amount = 0
+            self.fine_amount = 0
+            for item in self.table.get_children():
+                self.table.delete(item)
+            for lines in returned_data:
+                self.returned_data = lines
+                
+                current_date = datetime.today().date()
+                date2 = self.returned_data[3]
+                date2 = parser.parse(date2).date()
+                self.date_diff = self.check_amount(current_date , date2)
+                self.total_check_amount  += self.date_diff
+                self.amount_label.config(text="Amount Incured || " + str(self.total_check_amount))
+                self.table.insert('' , 'end' , text="1" , values=(self.returned_data[0] , self.returned_data[1] , self.returned_data[2], self.returned_data[3],self.date_diff))
+        except :
+            print("Error hai")
 
 
-   
+    def check_amount(self, date1, date2):
+        delta =  (date1 - date2).days
+        if delta == 0 :
+            return 12
+        elif  0 < delta < 10:
+            return delta * 12
+        else:
+            return (delta*12) + 30
+
+        
 
     # Function to add the book details when the Form is loaded.
     def inserting_data_into_table(self):
         #self.table.insert('' , 'end' , text="1" ,values = ("Book Name" , "Book Publication" , "Book Author" , "Rented date"))
         if self.whole_book_count > 0 :
+            self.total_check_amount = 0
+            self.fine_amount = 0
             for books in self.whole_book:
-                self.table.insert('' ,'end' , text="1" , values=(books[0] , books[1] , books[2] , books[3]))
-        
+                current_date = datetime.today().date()
+                date2 = books[3]
+                date2 = parser.parse(date2).date()
+                self.date_diff = self.check_amount(current_date , date2)
+                self.total_check_amount  += self.date_diff
+                self.amount_label.config(text="Amount Incured || " + str(self.total_check_amount))
+                self.table.insert('' ,'end' , text="1" , values=(books[0] , books[1] , books[2] , books[3] , self.date_diff))
         
 
-    
-    # def rent_book_click(self):
-    #     today_date = datetime.date.today()
-    #     # datetime.strptim(date1 , "%Y/%M/%D")
-    #     value  = self.datepicker.get()
-    #     temp  = datetime.datetime(value)
 
     
     """Here working functions defined to be called by the buttons"""
@@ -103,26 +107,35 @@ class Dashboard():
         data  = self.var_choose.get()
         data = data + "," + self.username
         pub.sendMessage('book_renting' , book_name  = data)
+
+    
+    def returning_book(self):
+        selected_item = self.table.selection()[0]
+        returned_book_name  = self.table.item(selected_item)['values'][0]
+        current_value = self.table .item(selected_item)['values'][4]
+        self.total_check_amount-= current_value
+        self.amount_label.config(text="Amount Incured || " + str(self.total_check_amount))
+        # Define the function to add the deleted book into the to take books
+        pub.sendMessage("returned_book" , returned_book =  returned_book_name)
+        self.bookcount -=1
+        self.books_label.config(text="Books Taken || " + str(self.bookcount))
+        self.table.delete(self.table.delete(selected_item))
+        
    
     
     def defining_dynamic_controls(self):
-        # Calling function to populate the book list
         self.populating_book_list()
         self.var_choose = StringVar()
         self.var_return = StringVar()
         self.var_choose.set("Available Books")
         self.var_return.set("Choose to Return")
 
-#         # Setting the options menu and the date picker to choose the book to rent
         if self.book_to_take_count > 0:
             self.books = OptionMenu(self.main_layout , self.var_choose, *self.to_take_books)
-#         #self.datepicker = DateEntry(self.main_layout)
             self.rentbook = Button(self.main_layout ,text="Rent Selected Book" ,command=self.renting_book)
         if self.taken_book_count > 0:
-            self.rented_books = OptionMenu(self.main_layout , self.var_return ,  *self.taken_books)
-            self.delete_book = Button(self.main_layout , text="Return Rented Book" )
+            self.delete_book = Button(self.main_layout , text="Return Selected Book" , command=self.returning_book)
 
-#         # Bottom table controls which will be updated time to time
         self.table  = ttk.Treeview(self.bottom_layout,  columns=("1" , "2" , "3" ,"4" , "5") , show='headings' , height=5)
         self.table.column("# 1" , anchor=CENTER)
         self.table.heading("# 1", text="Book Name")
@@ -133,7 +146,7 @@ class Dashboard():
         self.table.column("# 4", anchor=CENTER)
         self.table.heading("# 4", text="Rented Date")
         self.table.column("# 5" , anchor=CENTER)
-        self.table.heading("# 5", text="Rent Charged")
+        self.table.heading("# 5", text="Rent Charged (Rupees)")
 
     def placing_controls(self):
         # Placement for the static controls
@@ -151,7 +164,7 @@ class Dashboard():
 
         if self.taken_book_count > 0:
             self.delete_book.pack(side=RIGHT , padx=5)
-            self.rented_books.pack(side=RIGHT , padx=5)
+            # self.rented_books.pack(side=RIGHT , padx=5)
 
         self.bottom_layout.pack(fill=BOTH, expand=True , side=TOP)
         self.table.pack(side=TOP, fill="both", expand=True)
@@ -159,9 +172,3 @@ class Dashboard():
         self.inserting_data_into_table()
         self.dashboard.mainloop()
         
-
-
-# if __name__ == '__main__':
-#     name  = Dashboard()
-#     name.defining_static_controls()
-#     name.placing_controls()

@@ -14,3 +14,10 @@ def book_taken_data(book_list):
 #     for books in book_list:
 #         book_to_take_names.append(books[0])
 #     return book_to_take_names
+
+
+
+## Funcion to check the diff bw two dates and add them as the int
+
+def date_diff():
+    pass

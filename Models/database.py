@@ -31,6 +31,12 @@ def book_lending():
     saving_details()
     return lend_books
 
+def book_return(book_name):
+    c.execute('UPDATE books SET rented_date = NULL WHERE book_name="%s";' %(book_name))
+    saving_details()
+    c.execute('UPDATE books SET rented_user = NULL WHERE book_name = "%s";' %(book_name))
+    saving_details()
+
 
 ## Checking login credentials
 def login_check(username ,  password):
@@ -64,4 +70,4 @@ def book_lending_database(book_name):
     c.execute('SELECT * FROM books WHERE rented_user = "%s";' %(username))
     list = c.fetchall()
     return list
-    
+
